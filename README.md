@@ -242,25 +242,113 @@
 
 ### 11. Hello 서블릿
 
+- 서블릿은 톰캣 같은 웹 애플리케이션 서버를 직접 설치하고,그 위에 서블릿 코드를 클래스 파일로 빌드해서 올린다음, 톰캣 서버를 실행하면 된다. 하지만 이 과정은 매우 번거롭다.
+- **스프링 부트는 톰캣 서버를 내장하고 있으므로, 톰캣 서버 설치 없이 편리하게 서블릿 코드를 실행할 수 있다.**
+- 스프링 부트 서블릿 환경 구성
+  - `@ServletComponentScan`: 스프링 부트는 서블릿을 직접 등록해서 사용할 수 있도록 지원한다.
+
 ### 12. HttpServletRequest - 개요
+
+- 서블릿은 HTTP 요청 메시지를 파싱하여 그 결과를 `HttpServletRequest`객체에 담아서 제공한다.
+- START LINE
+  - HTTP 메소드
+  - URL
+  - 쿼리 스트링
+  - 스키마, 프로토콜
+  - 헤더
+  - 헤더 조회
+- 바디
+
+  - form 파라미터 형식 조회
+  - message body 데이터 직접 조회
+
+- HttpServletRequest 객체는 추가로 여러가지 부가기능도 함께 제공한다.
+
+  - 임시 저장소 기능
+    - 해당 HTTP 요청이 시작부터 끝날 때 까지 유지되는 임시 저장소 기능
+    - 저장: request.setAttribute(name, value)
+    - 조회: request.getAttribute(name)
+  - 세션 관리 기능
+    - request.getSession(create: true)
 
 ### 13. HttpServletRequest - 기본 사용법
 
+- [RequestHeaderServlet.java](./src/main/java/com/mvc/hello/basic/request/RequestHeaderServlet.java)
+
 ### 14. HTTP 요청 데이터 - 개요
+
+- HTTP 요청 메시지를 통해 클라이언트에서 서버로 데이터를 전달하는 방법을 알아보자.
+- 주로 다음 3가지 방법을 사용한다.
+- **GET - 쿼리 파라미터**
+  - /url**?username=hello&age=20**
+  - 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
+  - 예) 검색, 필터, 페이징등에서 많이 사용하는 방식
+- **POST - HTML Form**
+  - content-type: application/x-www-form-urlencoded
+  - 메시지 바디에 쿼리 파리미터 형식으로 전달 username=hello&age=20
+  - 예) 회원 가입, 상품 주문, HTML Form 사용
+- **HTTP message body에 데이터를 직접 담아서 요청**
+  - HTTP API에서 주로 사용, JSON, XML, TEXT
+  - 데이터 형식은 주로 JSON 사용
+  - POST, PUT, PATCH
 
 ### 15. HTTP 요청 데이터 - GET 쿼리 파라미터
 
+- [RequestParamServlet.java](./src/main/java/com/mvc/hello/basic/request/RequestParamServlet.java)
+
 ### 16. HTTP 요청 데이터 - POST HTML Form
+
+- content-type: application/x-www-form-urlencoded
+- 메시지 바디에 쿼리 파리미터 형식으로 데이터를 전달한다. username=hello&age=20
+
+  - 요청 URL: http://localhost:8080/request-param
+  - content-type: application/x-www-form-urlencoded
+  - message body: username=hello&age=20
+
+- application/x-www-form-urlencoded 형식은 앞서 GET에서 살펴본 쿼리 파라미터 형식과 같다.
+- 따라서 쿼리 파라미터 조회 메서드를 그대로 사용하면 된다.
+- 클라이언트(웹 브라우저) 입장에서는 두 방식에 차이가 있지만, 서버 입장에서는 둘의 형식이 동일하므로, request.getParameter() 로 편리하게 구분없이 조회할 수 있다.
+- http 메서드가 달라 분리해서 처리해야 할 것 같은데 이부분 신기하다.
+  - `@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})` - 요즘 방식도 가능
+- 정리하면 request.getParameter() 는 GET URL 쿼리 파라미터 형식도 지원하고, POST HTML Form 형식도 둘 다 지원한다.
+
+- content-type은 HTTP 메시지 바디의 데이터 형식을 지정한다.
+  - GET URL 쿼리 파라미터 형식으로 클라이언트에서 서버로 데이터를 전달할 때는 HTTP 메시지 바디를 사용하지 않기 때문에 content-type이 없다.
+  - **POST HTML Form 형식으로 데이터를 전달하면 HTTP 메시지 바디에 해당 데이터를 포함해서 보내기 때문에 바디에 포함된 데이터가 어떤 형식인지 content-type을 꼭 지정해야 한다.**
+  - 이렇게 폼으로 데이터를 전송하는 형식을 application/x-www-form-urlencoded 라 한다.
 
 ### 17. HTTP 요청 데이터 - API 메시지 바디 - 단순 텍스트
 
+- HTTP message body에 데이터를 직접 담아서 요청
+
+  - API에서 주로 사용, JSON, XML, TEXT
+  - 데이터 형식은 주로 JSON 사용
+  - POST, PUT, PATCH
+
+- inputStream은 byte 코드를 반환한다. byte 코드를 우리가 읽을 수 있는 문자(String)로 보려면 문자표(Charset)를 지정해주어야 한다.
+- [RequestBodyStringServlet.java](./src/main/java/com/mvc/hello/basic/request/RequestBodyStringServlet.java)
+
 ### 18. HTTP 요청 데이터 - API 메시지 바디 - JSON
+
+- JSON 결과를 파싱해서 사용할 수 있는 자바 객체로 변환하려면 Jackson, Gson 같은 JSON 변환 라이브러리를 추가해서 사용해야 한다. **스프링 부트로 Spring MVC를 선택하면 기본으로 Jackson 라이브러리(ObjectMapper)를 함께 제공**한다.
+- HTML form 데이터도 메시지 바디를 통해 전송되므로 직접 읽을 수 있다. 하지만 편리한 파리미터 조회 기능(`request.getParameter(...)`)을 이미 제공하기 때문에 파라미터 조회 기능을 사용하면 된다.
+- [RequestBodyJsonServlet.java](./src/main/java/com/mvc/hello/basic/request/RequestBodyJsonServlet.java)
 
 ### 19. HttpServletResponse - 기본 사용법
 
+- [ResponseHeaderServlet.java](./src/main/java/com/mvc/hello/basic/response/ResponseHeaderServlet.java)
+
 ### 20. HTTP 응답 데이터 - 단순 텍스트, HTML
 
+- [ResponseHtmlServlet.java](./src/main/java/com/mvc/hello/basic/response/ResponseHtmlServlet.java)
+- **HTTP 응답으로 HTML을 반환할 때는 content-type을 `text/html`로 지정해야 한다.**
+
 ### 21. HTTP 응답 데이터 - API JSON
+
+- [ResponseJsonServlet.java](./src/main/java/com/mvc/hello/basic/response/ResponseJsonServlet.java)
+- **HTTP 응답으로 JSON을 반환할 때는 content-type을 `application/json`로 지정해야 한다.**
+- Jackson 라이브러리가 제공하는 objectMapper.writeValueAsString() 를 사용하면 객체를 JSON 문자로 변경할 수 있다.
+- **`application/json`은 스펙상 utf-8 형식을 사용하도록 정의되어 있다.** 그래서 스펙에서 `charset=utf-8`과 같은 추가 파라미터를 지원하지 않는다.
 
 ### 22. 정리
 
