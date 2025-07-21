@@ -1,11 +1,8 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.mvc.hello.domain.member.MemberRepository" %>
-
-<%@ page import="com.mvc.hello.domain.member.Member" %>
-
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-
-<% MemberRepository memberRepository = MemberRepository.getInstance();
+<%@ page contentType="text/html;charset=UTF-8" language="java" %> <%@ page
+import="com.mvc.hello.domain.member.MemberRepository" %> <%@ page
+import="com.mvc.hello.domain.member.Member" %> <%@ page
+contentType="text/html;charset=UTF-8" language="java" %> <% MemberRepository
+memberRepository = MemberRepository.getInstance();
 System.out.println("save.jsp"); String username =
 request.getParameter("username"); int age =
 Integer.parseInt(request.getParameter("age")); Member member = new
