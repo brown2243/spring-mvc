@@ -570,15 +570,197 @@ HttpServletRequest request, HttpServletResponse response
 
 ### 38. 스프링 MVC 전체 구조
 
+- 직접 만든 프레임워크 스프링 MVC 비교
+
+  - `FrontController` - `DispatcherServlet`
+  - `handlerMappingMap` - `HandlerMapping`
+  - `MyHandlerAdapter` - `HandlerAdapter`
+  - `ModelView` - `ModelAndView`
+  - `viewResolver` - `ViewResolver`
+  - `MyView` - `View`
+
+- 스프링 MVC도 프론트 컨트롤러 패턴으로 구현되어 있다.
+
+  - 스프링 MVC의 프론트 컨트롤러가 바로 디스패처 서블릿(DispatcherServlet)이다.
+  - `DispatcherServlet` 도 부모 클래스에서 `HttpServlet`을 상속 받아서 사용하고, 서블릿으로 동작한다.
+  - 스프링 부트는 DispatcherServlet 을 서블릿으로 자동으로 등록하면서 모든 경로( urlPatterns="/" )에 대해서 매핑한다.
+  - 더 자세한 경로가 우선순위가 높아 기존에 등록한 서블릿도 함께 동작한다.
+
+- 요청 흐름
+
+  - 서블릿이 호출되면 HttpServlet 이 제공하는 service() 가 호출된다.
+  - 스프링 MVC는 DispatcherServlet 의 부모인 FrameworkServlet 에서 service() 를 오버라이드 해두었다.
+  - FrameworkServlet.service() 를 시작으로 여러 메서드가 호출되면서 DispatcherServlet.doDispatch() 가 호출된다.
+
+- `DispatcherServlet`의 핵심인 `doDispatch()` 코드를 간단히 분석해보자.
+
+  1. 핸들러 조회: 핸들러 매핑을 통해 요청 URL에 매핑된 핸들러(컨트롤러)를 조회한다.
+  2. 핸들러 어댑터 조회: 핸들러를 실행할 수 있는 핸들러 어댑터를 조회한다.
+  3. 핸들러 어댑터 실행: 핸들러 어댑터를 실행한다.
+  4. 핸들러 실행: 핸들러 어댑터가 실제 핸들러를 실행한다.
+  5. ModelAndView 반환: 핸들러 어댑터는 핸들러가 반환하는 정보를 ModelAndView로 변환해서 반환한다.
+  6. viewResolver 호출: 뷰 리졸버를 찾고 실행한다.
+     JSP의 경우: InternalResourceViewResolver 가 자동 등록되고, 사용된다.
+  7. View 반환: 뷰 리졸버는 뷰의 논리 이름을 물리 이름으로 바꾸고, 렌더링 역할을 담당하는 뷰 객체를 반환한다.
+     JSP의 경우 InternalResourceView(JstlView) 를 반환하는데, 내부에 forward() 로직이 있다.
+  8. 뷰 렌더링: 뷰를 통해서 뷰를 렌더링 한다.
+
+- 스프링 MVC는 코드 분량도 매우 많고, 복잡해서 내부 구조를 다 파악하는 것은 쉽지 않다.
+- 그래도 핵심 동작방식을 알아두어야 향후 문제가 발생했을 때 어떤 부분에서 문제가 발생했는지 쉽게 파악하고, 문제를 해결할 수 있다.
+- 그리고 확장 포인트가 필요할 때, 어떤 부분을 확장해야 할지 감을 잡을 수 있다.
+- 지금은 전체적인 구조가 이렇게 되어 있구나 하고 이해하면 된다.
+
 ### 39. 핸들러 매핑과 핸들러 어댑터
+
+- Controller 인터페이스로 컨트롤러 구현
+
+  - 스프링도 처음에는 이런 딱딱한 형식의 컨트롤러를 제공했다.
+  - @Component : 이 컨트롤러는 /springmvc/old-controller 라는 이름의 스프링 빈으로 등록되었다.
+  - 빈의 이름으로 URL을 매핑
+  -
+
+- HandlerMapping(핸들러 매핑)
+
+  - 핸들러 매핑에서 이 컨트롤러를 찾을 수 있어야 한다.
+  - 예) 스프링 빈의 이름으로 핸들러를 찾을 수 있는 핸들러 매핑이 필요하다.
+  - 0 = RequestMappingHandlerMapping : 애노테이션 기반의 컨트롤러인 @RequestMapping에서 사용
+  - 1 = BeanNameUrlHandlerMapping : 스프링 빈의 이름으로 핸들러를 찾는다.
+
+- HandlerAdapter(핸들러 어댑터)
+
+  - 핸들러 매핑을 통해서 찾은 핸들러를 실행할 수 있는 핸들러 어댑터가 필요하다.
+  - 예) Controller 인터페이스를 실행할 수 있는 핸들러 어댑터를 찾고 실행해야 한다.
+  - 0 = RequestMappingHandlerAdapter : 애노테이션 기반의 컨트롤러인 @RequestMapping에서 사용
+  - 1 = HttpRequestHandlerAdapter : HttpRequestHandler 처리
+  - 2 = SimpleControllerHandlerAdapter : Controller 인터페이스(애노테이션X, 과거에 사용) 처리
+
+- 요청 처리를 위해 일반적으로 Handler를 찾고 실행한 뒤 View를 찾는 과정에서 핵심적인 순서
+- **DispatcherServlet → HandlerMapping → HandlerAdapter → ViewResolver**
+
+1. 핸들러 매핑으로 핸들러 조회
+   1. HandlerMapping 을 순서대로 실행해서, 핸들러를 찾는다.
+   2. 이 경우 빈 이름으로 핸들러를 찾아야 하기 때문에 이름 그대로 빈 이름으로 핸들러를 찾아주는 BeanNameUrlHandlerMapping 가 실행에 성공하고 핸들러인 OldController 를 반환한다.
+2. 핸들러 어댑터 조회
+   1. HandlerAdapter 의 supports() 를 순서대로 호출한다.
+   2. SimpleControllerHandlerAdapter 가 Controller 인터페이스를 지원하므로 대상이 된다.
+3. 핸들러 어댑터 실행
+   1. 디스패처 서블릿이 조회한 SimpleControllerHandlerAdapter 를 실행하면서 핸들러 정보도 함께 넘겨준다.
+   2. SimpleControllerHandlerAdapter 는 핸들러인 OldController 를 내부에서 실행하고, 그 결과를 반환한다.
+
+- OldController 를 실행하면서 사용된 객체는 다음과 같다.
+
+  - HandlerMapping = BeanNameUrlHandlerMapping
+  - HandlerAdapter = SimpleControllerHandlerAdapter
+
+- 가장 우선순위가 높은 핸들러 매핑과 핸들러 어댑터는 `RequestMappingHandlerMapping`,`RequestMappingHandlerAdapter`이다.
+- @RequestMapping 의 앞글자를 따서 만든 이름인데, 이것이 바로 지금 스프링에서 주로 사용하는 애노테이션 기반의 컨트롤러를 지원하는 매핑과 어댑터이다.
+- 실무에서는 99.9% 이 방식의 컨트롤러를 사용한다.
 
 ### 40. 뷰 리졸버
 
+- 결국 뷰 이름을 뷰 리졸버가 실제경로로 변환해 찾고, 적절한 뷰로 해당 파일을 처리
+
+1. 핸들러 어댑터 호출
+   핸들러 어댑터를 통해 new-form 이라는 논리 뷰 이름을 획득한다.
+
+2. ViewResolver 호출
+   new-form 이라는 뷰 이름으로 viewResolver를 순서대로 호출한다.
+   BeanNameViewResolver 는 new-form 이라는 이름의 스프링 빈으로 등록된 뷰를 찾아야 하는데 없다.
+   InternalResourceViewResolver 가 호출된다.
+
+3. InternalResourceViewResolver
+   이 뷰 리졸버는 InternalResourceView 를 반환한다.
+
+4. 뷰 - InternalResourceView
+   InternalResourceView 는 JSP처럼 포워드 forward() 를 호출해서 처리할 수 있는 경우에 사용한다.
+
+5. view.render()
+   view.render() 가 호출되고 InternalResourceView 는 forward() 를 사용해서 JSP를 실행한다.
+
 ### 41. 스프링 MVC - 시작하기
+
+- 스프링이 제공하는 컨트롤러는 애노테이션 기반으로 동작해서, 매우 유연하고 실용적이다.
+  - 과거에는 자바 언어에 애노테이션이 없기도 했고, 스프링도 처음부터 이런 유연한 컨트롤러를 제공한 것은 아니다.
+
+#### @RequestMapping
+
+- 스프링은 애노테이션을 활용한 매우 유연하고, 실용적인 컨트롤러를 만들었는데 이것이 바로 `@RequestMapping`애노테이션을 사용하는 컨트롤러이다.
+  - 여담이지만 과거에는 스프링 프레임워크가 MVC 부분이 약해서 스프링을 사용하더라도 MVC 웹 기술은 스트럿츠 같은 다른 프레임워크를 사용했지만 @RequestMapping 기반의 애노테이션 컨트롤러가 등장하면서, MVC 부분도 스프링의 완승으로 끝이 났다.
+- 가장 우선순위가 높은 핸들러 매핑과 핸들러 어댑터는 `RequestMappingHandlerMapping`, `RequestMappingHandlerAdapter`이다.
+- 애노테이션 기반의 컨트롤러를 지원하는 핸들러 매핑과 어댑터이다. 실무에서는 99.9% 이 방식의 컨트롤러를 사용한다.
+
+- @Controller : 스프링이 자동으로 스프링 빈으로 등록한다.
+  - 스프링 MVC에서 애노테이션 기반 컨트롤러로 인식한다.
+- @RequestMapping : 요청 정보를 매핑한다. 해당 URL이 호출되면 이 메서드가 호출된다.
+  - 애노테이션을 기반으로 동작하기 때문에, 메서드의 이름은 임의로 지으면 된다.
+- ModelAndView : 모델과 뷰 정보를 담아서 반환하면 된다.
 
 ### 42. 스프링 MVC - 컨트롤러 통합
 
+- `@RequestMapping`을 잘 보면 클래스 단위가 아니라 메서드 단위에 적용된 것을 확인할 수 있다.
+- 따라서 컨트롤러 클래스를 유연하게 하나로 통합할 수 있다.
+- 클래스 레벨에 다음과 같이 `@RequestMapping`을 두면 메서드 레벨과 조합이 된다.
+
+```java
+@Controller
+@RequestMapping("/springmvc/v2/members")
+```
+
 ### 43. 스프링 MVC - 실용적인 방식
+
+- `Model` 파라미터
+- ViewName 직접 반환
+- `@RequestParam` 사용
+  - 스프링은 HTTP 요청 파라미터를 @RequestParam 으로 받을 수 있다.
+  - @RequestParam("username") 은 request.getParameter("username") 와 거의 같은 코드라 생각하면 된다.
+  - GET 쿼리 파라미터, POST Form 방식을 모두 지원한다.
+- `@RequestMapping`, `@GetMapping`, `@PostMapping`...
+  - `@RequestMapping`은 URL만 매칭하는 것이 아니라, HTTP Method도 함께 구분할 수 있다.
+  - 이것을 `@GetMapping` , `@PostMapping` 으로 더 편리하게 사용할 수 있다.
+
+#### @RequestMapping 어노테이션이 어떻게 return ModelAndView or String 처리나 파라미터를 다양하게 받을 수 있게 하는지
+
+- @RequestMapping이 붙은 메서드가 다양한 파라미터를 받고 여러 타입으로 값을 반환할 수 있는 것은 스프링 MVC의 **HandlerMethodArgumentResolver**와 HandlerMethodReturnValueHandler 덕분입니다.
+
+1. 파라미터 처리: HandlerMethodArgumentResolver
+
+   - 역할: 컨트롤러 메서드의 파라미터를 해석하고, HTTP 요청에서 적절한 값을 추출하여 넘겨주는 역할을 합니다.
+   - 스프링은 수십 개의 기본 ArgumentResolver 구현체를 가지고 있습니다.
+   - DispatcherServlet이 컨트롤러를 호출하기 직전에, 등록된 ArgumentResolver들을 하나씩 확인하며 "이 파라미터를 처리할 수 있니?"라고 물어봅니다.
+   - @RequestParam이 붙은 파라미터 → RequestParamMethodArgumentResolver가 처리
+   - @PathVariable이 붙은 파라미터 → PathVariableMethodArgumentResolver가 처리
+   - Model 타입의 파라미터 → ModelMethodProcessor가 처리
+   - HttpServletRequest 타입의 파라미터 → ServletRequestMethodArgumentResolver가 처리
+   - 각각의 ArgumentResolver는 자신이 맡은 어노테이션이나 타입을 보고, 요청에서 값을 꺼내거나 필요한 객체를 생성해서 컨트롤러 메서드에 전달해 줍니다.
+
+2. 반환 값 처리: HandlerMethodReturnValueHandler
+   - 역할: 컨트롤러 메서드가 반환하는 값을 보고, 이후의 동작(뷰 렌더링, JSON 응답 등)을 결정합니다.
+   - 컨트롤러 메서드 실행이 끝나면, 스프링은 반환된 값(객체)을 처리할 수 있는 ReturnValueHandler를 찾습니다.
+   - 반환 타입이 String일 경우 → ViewNameMethodReturnValueHandler가 "뷰 이름이구나!"라고 판단하고 ModelAndView 객체에 뷰 이름을 저장합니다.
+   - 반환 타입이 ModelAndView일 경우 → ModelAndViewMethodReturnValueHandler가 처리합니다.
+   - @ResponseBody가 붙어있거나 반환 타입이 HttpEntity일 경우 → RequestResponseBodyMethodProcessor가 객체를 JSON 등으로 변환하여 HTTP 응답 본문에 직접 써줍니다.
+
+- 이 로직들은 RequestMappingHandlerAdapter 클래스가 총괄하여 관리합니다.
+
+#### 위 과정이 런타임에 동작하는지, 맞다면 리플렉션 API를 사용해서 가능한지
+
+- 해당 기능은 런타임 중에 매 요청마다 동작하며, 이것은 Java의 리플렉션(Reflection) API 때문에 가능합니다.
+
+  - 스프링은 매번 HTTP 요청이 들어올 때마다 다음과 같은 일을 반복합니다.
+  - 이 요청을 처리할 컨트롤러 메서드를 찾는다.
+  - 스프링은 리플렉션 API를 사용해 컴파일 시점에 저장된 메서드의 설계도(메타데이터)를 읽습니다.
+  - 해당 메서드의 파라미터 목록을 확인한다. (@RequestParam, @PathVariable 등이 있는지)
+  - 각 파라미터에 맞는 ArgumentResolver를 사용해 요청에서 실제 값을 추출한다.
+  - 추출한 값들을 가지고 메서드를 실행한다.
+  - 이 과정은 요청에 따라 동적으로 처리되어야 하므로 반드시 런타임에 일어납니다.
+
+- 리플렉션 API의 역할
+  - 리플렉션은 프로그램 실행 중에 클래스의 구조(메서드, 필드, 어노테이션 등)를 분석하고 조작할 수 있게 해주는 강력한 Java API입니다.
+  - 스프링은 이 리플렉션을 다음과 같이 활용합니다.
+  - 메서드 및 파라미터 분석: 런타임에 컨트롤러 메서드(Method 객체)를 가져와 어떤 파라미터들이 있는지, 각 파라미터에 어떤 어노테이션이 붙어있는지 동적으로 확인합니다. (method.getParameters(), parameter.getAnnotations())
+  - 어노테이션 확인: parameter.isAnnotationPresent(RequestParam.class)와 같은 코드를 통해 특정 어노테이션의 존재 여부를 확인하고, 그에 맞는 ArgumentResolver를 선택합니다.
+  - 메서드 최종 호출: 모든 파라미터 값이 준비되면, method.invoke(controllerInstance, ...)를 통해 최종적으로 컨트롤러 메서드를 실행합니다.
+- 결론적으로, 어노테이션 자체는 단순한 '표식'일 뿐이며, 런타임에 스프링이 리플렉션 API를 사용해 이 표식들을 읽고, 그 의미에 따라 동적으로 값을 준비하고 메서드를 호출하는 것입니다.
 
 ### 44. 정리
 
