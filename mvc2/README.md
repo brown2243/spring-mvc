@@ -56,15 +56,96 @@
 
 ### 47. 요청 매핑
 
+- [MappingController](./src/main/java/com/spring/mvc/basic/requestmapping/MappingController.java)
+  - 정말 다양한 매핑 방식이 있다.
+  - PathVariable 이후로는 처음 봄...
+
 ### 48. 요청 매핑 - API 예시
+
+- [MappingClassController](./src/main/java/com/spring/mvc/basic/requestmapping/MappingClassController.java)
+- 매핑 연습
 
 ### 49. HTTP 요청 - 기본, 헤더 조회
 
+- HttpServletRequest
+- HttpServletResponse
+- HttpMethod: HTTP 메서드를 조회한다. org.springframework.http.HttpMethod
+- Locale : Locale 정보를 조회한다.
+- @RequestHeader MultiValueMap<String, String> headerMap
+  - 모든 HTTP 헤더를 MultiValueMap 형식으로 조회한다.
+- @RequestHeader("host") String host
+  - 특정 HTTP 헤더를 조회한다.
+  - 필수 값 여부: required
+  - 기본 값 속성: defaultValue
+- @CookieValue(value = "myCookie", required = false) String cookie
+  - 특정 쿠키를 조회한다.
+  - 필수 값 여부: required
+  - 기본 값: defaultValue
+- MultiValueMap
+
+  - MAP과 유사한데, 하나의 키에 여러 값을 받을 수 있다.
+  - HTTP header, HTTP 쿼리 파라미터와 같이 하나의 키에 여러 값을 받을 때 사용한다.
+  - keyA=value1&keyA=value2
+
+- @Controller 의 사용 가능한 파라미터 목록은 다음 공식 메뉴얼에서 확인할 수 있다.
+  - https://docs.spring.io/spring-framework/docs/current/reference/html/web.html#mvc-ann-arguments
+- @Controller 의 사용 가능한 응답 값 목록은 다음 공식 메뉴얼에서 확인할 수 있다.
+  - https://docs.spring.io/spring-framework/docs/current/reference/html/web.html#mvc-ann-return-types
+
 ### 50. HTTP 요청 파라미터 - 쿼리 파라미터, HTML Form
+
+- **클라이언트에서 서버로 요청 데이터를 전달할 때는 주로 다음 3가지 방법을 사용한다.**
+- GET - 쿼리 파라미터
+  - /url**?username=hello&age=20**
+  - 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
+  - 예) 검색, 필터, 페이징등에서 많이 사용하는 방식
+- POST - HTML Form
+  - content-type: application/x-www-form-urlencoded
+  - 메시지 바디에 쿼리 파리미터 형식으로 전달 username=hello&age=20
+  - 예) 회원 가입, 상품 주문, HTML Form 사용
+- HTTP message body에 데이터를 직접 담아서 요청
+
+  - HTTP API에서 주로 사용, JSON, XML, TEXT
+  - 데이터 형식은 주로 JSON 사용
+
+- 요청 파라미터 - 쿼리 파라미터, HTML Form
+  - HttpServletRequest 의 request.getParameter() 를 사용하면 다음 두가지 요청 파라미터를 조회할 수 있다.
+  - 이것을 간단히 요청 파라미터(request parameter) 조회라 한다.
+  - 지금부터 스프링으로 요청 파라미터를 조회하는 방법을 단계적으로 알아보자.
+  - [RequestParamController](./src/main/java/com/spring/mvc/basic/request/RequestParamController.java)
 
 ### 51. HTTP 요청 파라미터 - @RequestParam
 
+- String , int , Integer 등의 단순 타입이면 `@RequestParam`도 생략 가능
+
+  - 이렇게 애노테이션을 완전히 생략해도 되는데, 너무 없는 것도 약간 과하다는 주관적 생각이 있다.
+  - `@RequestParam` 이 있으면 명확하게 요청 파리미터에서 데이터를 읽는 다는 것을 알 수 있다.
+
+- 주의! - 파라미터 이름만 사용
+
+  - /request-param-required?username=
+  - 파라미터 이름만 있고 값이 없는 경우 빈문자로 통과
+
+- 주의! - 기본형(primitive)에 `null` 입력
+
+  - /request-param 요청
+  - `@RequestParam`(required = false) int age
+  - `null` 을 `int` 에 입력하는 것은 불가능(500 예외 발생)
+  - 따라서 `null` 을 받을 수 있는 `Integer` 로 변경하거나, 또는 다음에 나오는 `defaultValue`사용
+
+- 파라미터를 Map, MultiValueMap으로 조회할 수 있다.
+  - 파라미터의 값이 1개가 확실하다면 Map 을 사용해도 되지만, 그렇지 않다면 MultiValueMap 을 사용하자.
+
 ### 52. HTTP 요청 파라미터 - @ModelAttribute
+
+- 실제 개발을 하면 요청 파라미터를 받아서 필요한 객체를 만들고 그 객체에 값을 넣어주어야 한다.
+- 스프링은 이 과정을 완전히 자동화해주는 `@ModelAttribute` 기능을 제공한다.
+
+- `@ModelAttribute` 는 생략할 수 있다.
+  - `@RequestParam`도 생략할 수 있으니 혼란이 발생할 수 있다.
+- 스프링은 해당 생략시 다음과 같은 규칙을 적용한다.
+  - String , int , Integer 같은 단순 타입 = `@RequestParam`
+  - 나머지 = `@ModelAttribute` (argument resolver 로 지정해둔 타입 외)
 
 ### 53. HTTP 요청 메시지 - 단순 텍스트
 
