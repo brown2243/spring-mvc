@@ -48,8 +48,17 @@ messages.properties 파일만 등록하면 자동으로 인식된다.
 
 ### 36. 스프링 메시지 소스 사용
 
+- 타임리프의 메시지 표현식 `#{...}` 를 사용하면 스프링의 메시지를 편리하게 조회할 수 있다.
+- 참고로 파라미터는 다음과 같이 사용할 수 있다.
+  - `hello.name=안녕 {0}`
+  - `<p th:text="#{hello.name(${item.itemName})}"></p>`
+- `addForm`만 변경해봄
+
 ### 37. 웹 애플리케이션에 메시지 적용하기
 
 ### 38. 웹 애플리케이션에 국제화 적용하기
+
+- 스프링은 Locale 선택 방식을 변경할 수 있도록 LocaleResolver 라는 인터페이스를 제공하는데,
+- 스프링 부트는 기본으로 Accept-Language 를 활용하는 `AcceptHeaderLocaleResolver` 를 사용한다.
 
 ### 39. 정리
