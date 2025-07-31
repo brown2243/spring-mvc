@@ -296,8 +296,40 @@ Range
 
 ### 67. Form 전송 객체 분리 - 소개
 
+- 실무에서는 groups 를 잘 사용하지 않는데, 그 이유가 다른 곳에 있다. 바로 등록시 폼에서 전달하는 데이터가 Item 도메인 객체와 딱 맞지 않기 때문이다.
+- 그래서 보통 Item 을 직접 전달받는 것이 아니라, 복잡한 폼의 데이터를 컨트롤러까지 전달할 별도의 객체를 만들어서 전달한다.
+- 예를 들면 ItemSaveForm 이라는 폼을 전달받는 전용 객체를 만들어서 @ModelAttribute로 컨트롤러에서 폼 데이터를 전달 받고, 이후 컨트롤러에서 필요한 데이터를 사용해서 Item 을 생성한다.
+
 ### 68. Form 전송 객체 분리 - 개발
+
+- @ModelAttribute("item") 에 item 이름을 넣어준 부분을 주의하자.
+  - 이것을 넣지 않으면 ItemSaveForm 의 경우 규칙에 의해 itemSaveForm 이라는 이름으로 MVC Model에 담기게 된다.
+  - 이렇게 되면 뷰 템플릿에서 접근하는 th:object 이름도 함께 변경해주어야 한다.
 
 ### 69. Bean Validation - HTTP 메시지 컨버터
 
-70. 정리
+- @Valid , @Validated는 HttpMessageConverter(@RequestBody )에도 적용할 수 있다.
+
+  - @ModelAttribute 는 **HTTP 요청 파라미터(URL 쿼리 스트링, POST Form)를 다룰 때 사용**한다.
+  - @RequestBody 는 **HTTP Body의 데이터를 객체로 변환할 때 사용**한다. 주로 API JSON 요청을 다룰 때 사용한다.
+
+- API의 경우 3가지 경우를 나누어 생각해야 한다.
+  - 성공 요청: 성공
+  - 실패 요청: JSON을 객체로 생성하는 것 자체가 실패함
+  - 검증 오류 요청: JSON을 객체로 생성하는 것은 성공했고, 검증에서 실패함
+
+#### @ModelAttribute vs @RequestBody
+
+- HTTP 요청 파리미터를 처리하는 @ModelAttribute 는 각각의 필드 단위로 세밀하게 적용된다.
+- 그래서 특정 필드에 타입이 맞지 않는 오류가 발생해도 나머지 필드는 정상 처리할 수 있었다.
+- HttpMessageConverter 는 @ModelAttribute 와 다르게 각각의 필드 단위로 적용되는 것이 아니라, 전체 객체 단위로 적용된다.
+
+- @ModelAttribute 는 필드 단위로 정교하게 바인딩이 적용된다.
+  - 특정 필드가 바인딩 되지 않아도 나머지 필드는 정상 바인딩 되고, Validator를 사용한 검증도 적용할 수 있다.
+- @RequestBody 는 HttpMessageConverter 단계에서 JSON 데이터를 객체로 변경하지 못하면 이후 단계 자체가 진행되지 않고 예외가 발생한다.
+  - 컨트롤러도 호출되지 않고, Validator도 적용할 수 없다.
+- 이는 사실 당연하다
+  - 문자열을 객체로 변환을 못했는데 검증할 수가 없음
+  - 모델 어트리뷰트는 키밸류 개별값으로 전달받은 것임
+
+### 70. 정리
