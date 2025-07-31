@@ -215,21 +215,88 @@ public void init(WebDataBinder binder){
 
 ### 60. Bean Validation - 스프링 적용
 
+- 스프링 MVC는 어떻게 Bean Validator를 사용?
+- 스프링 부트가 spring-boot-starter-validation 라이브러리를 넣으면 자동으로 Bean Validator를 자동으로 글로벌 Validator로 등록한다.
+- LocalValidatorFactoryBean 을 글로벌 Validator로 등록한다.
+- 이 Validator는 @NotNull 같은 애노테이션을보고 검증을 수행한다.
+- 이렇게 글로벌 Validator가 적용되어 있기 때문에, @Valid , @Validated 만 적용하면 된다.
+- 검증 오류가 발생하면, FieldError , ObjectError 를 생성해서 bindingResult 에 담아준다.
+
+1. @ModelAttribute 각각의 필드에 타입 변환 시도
+2. 성공하면 다음으로
+3. 실패하면 typeMismatch 로 FieldError 추가
+4. Validator 적용
+
+- 바인딩에 성공한 필드만 Bean Validation 적용
+- BeanValidator는 바인딩에 실패한 필드는 BeanValidation을 적용하지 않는다.
+
 ### 61. Bean Validation - 에러 코드
 
+- Bean Validation을 적용하고 bindingResult 에 등록된 검증 오류 코드를 보자.
+- 오류 코드가 애노테이션 이름으로 등록된다. 마치 typeMismatch 와 유사하다.
+- NotBlank 라는 오류 코드를 기반으로 MessageCodesResolver 를 통해 다양한 메시지 코드가 순서대로 생성된다.
+
+```
+@NotBlank
+NotBlank.item.itemName
+NotBlank.itemName
+NotBlank.java.lang.String
+NotBlank
+
+@Range
+Range.item.price
+Range.price
+Range.java.lang.Integer
+Range
+```
+
+- BeanValidation 메시지 찾는 순서
+  1. 생성된 메시지 코드 순서대로 messageSource 에서 메시지 찾기
+  2. 애노테이션의 message 속성 사용 @NotBlank(message = "공백! {0}")
+  3. 라이브러리가 제공하는 기본 값 사용 공백일 수 없습니다.
+
 ### 62. Bean Validation - 오브젝트 오류
+
+- Bean Validation에서 특정 필드( FieldError )가 아닌 해당 오브젝트 관련 오류( ObjectError )는 어떻게 처리할 수 있을까?
+- @ScriptAssert() 를 사용하면 된다.
+
+- 실제 사용해보면 제약이 많고 복잡하다.
+- 그리고 실무에서는 검증 기능이 해당 객체의 범위를 넘어서는 경우들도 종종 등장하는데, 그런 경우 대응이 어렵다.
+
+- 따라서 **오브젝트 오류(글로벌 오류)의 경우 @ScriptAssert 을 억지로 사용하는 것 보다는 다음과 같이 오브젝트 오류 관련 부분만 직접 자바 코드로 작성하는 것을 권장한다.**
 
 ### 63. Bean Validation - 수정에 적용
 
 ### 64. Bean Validation - 한계
 
+- 데이터를 등록할 때와 수정할 때는 요구사항이 다를 수 있다.
+  - 등록시에는 quantity 수량을 최대 9999까지 등록할 수 있지만 수정시에는 수량을 무제한으로 변경할 수 있다.
+  - 등록시에는 id 에 값이 없어도 되지만, 수정시에는 id 값이 필수이다.
+- DTO를 분리해서 검증하면 될듯
+
+  - Item은 엔티티인데 검증로직이 붙어있음
+
+- 수정 시,item 의 id 값은 항상 들어있도록 로직이 구성되어 있다.
+  - 그런데 HTTP 요청은 언제든지 악의적으로 변경해서 요청할 수 있으므로 서버에서 항상 검증해야 한다.
+  - 예를 들어서 HTTP 요청을 변경해서 item 의 id 값을 삭제하고 요청할 수도 있다.
+- 따라서 최종 검증은 서버에서 진행하는 것이 안전한다.
+
 ### 65. Bean Validation - groups
 
-66. Form 전송 객체 분리 - 프로젝트 준비 V4
+- 동일한 모델 객체를 등록할 때와 수정할 때 각각 다르게 검증하는 방법을 알아보자.
 
-67. Form 전송 객체 분리 - 소개
+- **BeanValidation의 groups 기능을 사용한다**.
+  - 이번 강의 내용인데, 실무에서 이렇게 쓸까 싶다...
+- Item을 직접 사용하지 않고, ItemSaveForm, ItemUpdateForm 같은 폼 전송을 위한 별도의 모델 객체를 만들어서 사용한다.
 
-68. Form 전송 객체 분리 - 개발
+- @Valid 에는 groups를 적용할 수 있는 기능이 없다. 따라서 groups를 사용하려면 @Validated 를 사용해야 한다.
+- 사실 groups 기능은 실제 잘 사용되지는 않는데, **그 이유는 실무에서는 주로 다음에 등장하는 등록용 폼 객체와 수정용 폼 객체를 분리해서 사용**하기 때문이다.
+
+### 66. Form 전송 객체 분리 - 프로젝트 준비 V4
+
+### 67. Form 전송 객체 분리 - 소개
+
+### 68. Form 전송 객체 분리 - 개발
 
 ### 69. Bean Validation - HTTP 메시지 컨버터
 
