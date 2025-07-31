@@ -90,18 +90,106 @@
 
 ### 48. 오류 코드와 메시지 처리1
 
+- 에러 메세지 파일 만들고, 컨트롤러에서 에러응답에 사용
+- codes : required.item.itemName 를 사용해서 메시지 코드를 지정한다. 메시지 코드는 하나가 아니라 배열로 여러 값을 전달할 수 있는데, 순서대로 매칭해서 처음 매칭되는 메시지가 사용된다.
+- arguments : Object[]{1000, 1000000} 를 사용해서 코드의 {0} , {1} 로 치환할 값을 전달한다.
+
 ### 49. 오류 코드와 메시지 처리2
+
+- FieldError , ObjectError 는 다루기 너무 번거롭다.
+  - 오류 코드도 좀 더 자동화 할 수 있지 않을까? 예) item.itemName 처럼?
+- 컨트롤러에서 BindingResult 는 검증해야 할 객체인 target 바로 다음에 온다.
+
+  - 따라서 BindingResult 는 이미 본인이 검증해야 할 객체인 target 을 알고 있다.
+
+- rejectValue() , reject() 를 사용해서 FieldError , ObjectError 를 직접 생성하지 않고, 깔끔하게 검증 오류를 다룰 수 있다.
 
 ### 50. 오류 코드와 메시지 처리3
 
+- 단순하게 만들면 범용성이 좋아서 여러곳에서 사용할 수 있지만, 메시지를 세밀하게 작성하기 어렵다.
+- 반대로 너무 자세하게 만들면 범용성이 떨어진다. 가장 좋은 방법은 범용성으로 사용하다가, 세밀하게 작성해야 하는 경우에는 세밀한 내용이 적용되도록 메시지에 단계를 두는 방법이다.
+
+- 오류 메시지에 required.item.itemName 와 같이 객체명과 필드명을 조합한 세밀한 메시지 코드가 있으면 높은 우선순위로 사용하는 것이다.
+
 ### 51. 오류 코드와 메시지 처리4
+
+- MessageCodesResolver: 검증 오류 코드로 메시지 코드들을 생성한다.
+- MessageCodesResolver 인터페이스이고 DefaultMessageCodesResolver 는 기본 구현체이다.
+
+- DefaultMessageCodesResolver의 기본 메시지 생성 규칙
+  - 객체 오류의 경우 다음 순서로 2가지 생성
+    - 1.: code + "." + object name
+    - 2.: code
+    - 예) 오류 코드: required, object name: item
+    - 1.: required.item
+    - 2.: required
+  - 필드 오류의 경우 다음 순서로 4가지 메시지 코드 생성
+    - 1.: code + "." + object name + "." + field
+    - 2.: code + "." + field
+    - 3.: code + "." + field type
+    - 4.: code
+    - 예) 오류 코드: typeMismatch, object name "user", field "age", field type: int
+    - 1. "typeMismatch.user.age"
+    - 2. "typeMismatch.age"
+    - 3. "typeMismatch.int"
+    - 4. "typeMismatch"
 
 ### 52. 오류 코드와 메시지 처리5
 
+- **모든 오류 코드에 대해서 메시지를 각각 다 정의하면 개발자 입장에서 관리하기 너무 힘들다.**
+
+  - 이거는 번역팩 텍스트, 에러메세지등 실무경험 해보면 아주 체감하는 내용
+
+- itemName 의 경우 required 검증 오류 메시지가 발생하면 다음 코드 순서대로 메시지가 생성된다.
+
+  1. required.item.itemName
+  2. required.itemName
+  3. required.java.lang.String
+  4. required
+
+- 생성된 메시지 코드를 기반으로 순서대로 MessageSource 에서 메시지에서 찾는다.
+- 구체적인 것에서 덜 구체적인 순서대로 찾는다. 메시지에 1번이 없으면 2번을 찾고, 2번이 없으면 3번을 찾는다.
+
+1. rejectValue() 호출
+2. MessageCodesResolver 를 사용해서 검증 오류 코드로 메시지 코드들을 생성
+3. new FieldError() 를 생성하면서 메시지 코드들을 보관
+4. th:erros 에서 메시지 코드들로 메시지를 순서대로 메시지에서 찾고, 노출
+
 ### 53. 오류 코드와 메시지 처리6
+
+- 검증 오류 코드는 다음과 같이 2가지로 나눌 수 있다.
+  - 개발자가 직접 설정한 오류 코드 rejectValue() 를 직접 호출
+  - 스프링이 직접 검증 오류에 추가한 경우(주로 타입 정보가 맞지 않음)
+    - 타입 오류가 발생하면 typeMismatch 라는 오류 코드를 사용한다.
 
 ### 54. Validator 분리1
 
+- 복잡한 검증 로직을 별도로 분리하자.
+  - 이거는 당연한건데 스프링이 제공하는 인터페이스를 사용하는게 유용할까?
+    - 검증로직은 회바회일 것 같고 해당 인터페이스를 사용하면 검증로직마다 클래스가 생길것 같다.
+  - 스프링은 검증을 체계적으로 제공하기 위해 다음 인터페이스를 제공한다.
+    - `public interface Validator`
+    - supports() {} : 해당 검증기를 지원하는 여부 확인(뒤에서 설명)
+    - validate(Object target, Errors errors) : 검증 대상 객체, BindingResult
+
 ### 55. Validator 분리2
+
+- `Validator` 인터페이스를 사용해서 검증기를 만들면 스프링의 추가적인 도움을 받을 수 있다.
+- controller 기준으로 `@Validated` 붙은 객체에 대해 자동 검증
+  - `@Valid`(표준 자바) 또는 `@Validated`(Spring) 어노테이션을 사용하면 Spring이 WebDataBinder에 등록된 `Validator`를 찾아 해당 객체에 대한 검증을 자동으로 수행
+- 이 기능은 DTO에 쓸 수 있을 것 같다.
+
+```java
+@InitBinder
+public void init(WebDataBinder binder){
+    binder.addValidators(itemValidator);
+}
+```
+
+- @Validated 는 검증기를 실행하라는 애노테이션이다.
+- 이 애노테이션이 붙으면 앞서 WebDataBinder 에 등록한 검증기를 찾아서 실행한다.
+- 그런데 여러 검증기를 등록한다면 그 중에 어떤 검증기가 실행되어야 할지 구분이 필요하다. 이때 supports() 가 사용된다.
+- 여기서는 supports(Item.class) 호출되고, 결과가 true 이므로 ItemValidator 의 validate() 가 호출된다.
+- 글로벌 설정도 가능하지만 드물다.
 
 ### 56. 정리
