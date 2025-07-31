@@ -193,3 +193,44 @@ public void init(WebDataBinder binder){
 - 글로벌 설정도 가능하지만 드물다.
 
 ### 56. 정리
+
+## 13. 검증2 - Bean Validation
+
+### 57. Bean Validation - 소개
+
+- Bean Validation은 특정한 구현체가 아니라 Bean Validation 2.0(JSR-380)이라는 기술 표준이다.
+- 쉽게 이야기해서 검증 애노테이션과 여러 인터페이스의 모음이다.
+- 마치 JPA가 표준 기술이고 그 구현체로 하이버네이트가 있는 것과 같다.
+
+- Bean Validation을 구현한 기술중에 일반적으로 사용하는 구현체는 하이버네이트 Validator이다.
+- 이름이 하이버네이트가 붙어서 그렇지 ORM과는 관련이 없다.
+
+- javax.validation 으로 시작하면 특정 구현에 관계없이 제공되는 표준 인터페이스이고,
+- org.hibernate.validator 로 시작하면 하이버네이트 validator 구현체를 사용할 때만 제공되는 검증 기능이다.
+- 실무에서 대부분 하이버네이트 validator를 사용하므로 자유롭게 사용해도 된다.
+
+### 58. Bean Validation - 시작
+
+### 59. Bean Validation - 프로젝트 준비 V3
+
+### 60. Bean Validation - 스프링 적용
+
+### 61. Bean Validation - 에러 코드
+
+### 62. Bean Validation - 오브젝트 오류
+
+### 63. Bean Validation - 수정에 적용
+
+### 64. Bean Validation - 한계
+
+### 65. Bean Validation - groups
+
+66. Form 전송 객체 분리 - 프로젝트 준비 V4
+
+67. Form 전송 객체 분리 - 소개
+
+68. Form 전송 객체 분리 - 개발
+
+### 69. Bean Validation - HTTP 메시지 컨버터
+
+70. 정리

@@ -14,37 +14,7 @@
 
 ## [11. 메시지, 국제화](./message)
 
-## [12. 검증1 - Validation](./validation)
-
-## 13. 검증2 - Bean Validation
-
-57. Bean Validation - 소개
-
-58. Bean Validation - 시작
-
-59. Bean Validation - 프로젝트 준비 V3
-
-60. Bean Validation - 스프링 적용
-
-61. Bean Validation - 에러 코드
-
-62. Bean Validation - 오브젝트 오류
-
-63. Bean Validation - 수정에 적용
-
-64. Bean Validation - 한계
-
-65. Bean Validation - groups
-
-66. Form 전송 객체 분리 - 프로젝트 준비 V4
-
-67. Form 전송 객체 분리 - 소개
-
-68. Form 전송 객체 분리 - 개발
-
-69. Bean Validation - HTTP 메시지 컨버터
-
-70. 정리
+## [12. 검증1 - Validation ~ 13. 검증2 - Bean Validation](./validation)
 
 ## 14. 로그인 처리1 - 쿠키, 세션
 
