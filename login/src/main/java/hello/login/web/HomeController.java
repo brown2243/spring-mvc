@@ -1,14 +1,13 @@
 package hello.login.web;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttribute;
 
 import hello.login.session.SessionManager;
 import hello.login.web.member.Member;
@@ -44,19 +43,7 @@ public class HomeController {
         return "loginHome";
     }
 
-    // @PostMapping("/logout")
-    public String logoutV1(HttpServletResponse response) {
-        expireCookie(response, "memberId");
-        return "redirect:";
-    }
-
-    private void expireCookie(HttpServletResponse response, String cookieName) {
-        Cookie cookie = new Cookie(cookieName, null);
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-    }
-
-    @GetMapping("")
+    // @GetMapping("")
     public String homeLoginV2(
             HttpServletRequest req,
             Model model) {
@@ -69,9 +56,29 @@ public class HomeController {
         return "loginHome";
     }
 
-    @PostMapping("/logout")
-    public String logoutV2(HttpServletRequest request) {
-        sessionManager.expire(request);
-        return "redirect:/";
+    // @GetMapping("")
+    public String homeLoginV3(
+            HttpServletRequest req,
+            Model model) {
+        HttpSession session = req.getSession();
+        // 로그인
+        if (session == null) {
+            return "home";
+        }
+        Member loginMember = (Member) session.getAttribute(SessionConst.LOGIN_MEMBER);
+        model.addAttribute("member", loginMember);
+        return "loginHome";
     }
+
+    @GetMapping("")
+    public String homeLoginV3Spring(
+            @SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member loginMember,
+            Model model) {
+        if (loginMember == null) {
+            return "home";
+        }
+        model.addAttribute("member", loginMember);
+        return "loginHome";
+    }
+
 }
