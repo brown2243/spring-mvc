@@ -1,25 +1,37 @@
 package hello.login;
 
-import hello.login.domain.item.Item;
-import hello.login.domain.item.ItemRepository;
-import lombok.RequiredArgsConstructor;
+import javax.annotation.PostConstruct;
+
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import hello.login.domain.item.Item;
+import hello.login.domain.item.ItemRepository;
+import hello.login.web.member.Member;
+import hello.login.web.member.MemberRepository;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class TestDataInit {
+  private final ItemRepository itemRepository;
+  private final MemberRepository memberRepository;
 
-    private final ItemRepository itemRepository;
-
-    /**
-     * 테스트용 데이터 추가
-     */
-    @PostConstruct
-    public void init() {
-        itemRepository.save(new Item("itemA", 10000, 10));
-        itemRepository.save(new Item("itemB", 20000, 20));
-    }
-
+  /**
+   * 테스트용 데이터 추가
+   */
+  @PostConstruct
+  public void init() {
+    itemRepository.save(new Item("itemA", 10000, 10));
+    itemRepository.save(new Item("itemB", 20000, 20));
+    Member member = new Member();
+    member.setLoginId("test");
+    member.setPassword("test!");
+    member.setName("테스터");
+    memberRepository.save(member);
+    Member member2 = new Member();
+    member2.setLoginId("t");
+    member2.setPassword("t");
+    member2.setName("테스터2");
+    memberRepository.save(member2);
+  }
 }
