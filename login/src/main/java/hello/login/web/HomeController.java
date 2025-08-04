@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 
 import hello.login.session.SessionManager;
+import hello.login.web.argumentresolver.Login;
 import hello.login.web.member.Member;
 import hello.login.web.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -70,9 +71,20 @@ public class HomeController {
         return "loginHome";
     }
 
-    @GetMapping("")
+    // @GetMapping("")
     public String homeLoginV3Spring(
             @SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member loginMember,
+            Model model) {
+        if (loginMember == null) {
+            return "home";
+        }
+        model.addAttribute("member", loginMember);
+        return "loginHome";
+    }
+
+    @GetMapping("")
+    public String homeLoginV3ArgumentResolver(
+            @Login Member loginMember,
             Model model) {
         if (loginMember == null) {
             return "home";
